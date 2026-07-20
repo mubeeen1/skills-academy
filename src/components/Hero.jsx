@@ -1,51 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Award, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Award, Compass, ShieldCheck, Stars } from "lucide-react";
 
 export default function Hero() {
-  const banners = [
-    {
-      src: "/images/1.jpeg",
-      alt: "AFNS-26 preparation banner",
-      title: "AFNS Initial Test Preparation",
-    },
-    {
-      src: "/images/2.jpeg",
-      alt: "Graphic Designing and Video Editing Mobile Course",
-      title: "Mobile Graphic & Video Editing",
-    },
-    {
-      src: "/images/3.jpeg",
-      alt: "School, College, University Certificates Guidance",
-      title: "Hope & Provisional Certificates",
-    },
-    {
-      src: "/images/4.jpeg",
-      alt: "Matric and Intermediate admissions, improvement and supplementary help",
-      title: "Academic Admissions Support",
-    },
-  ];
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % banners.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [banners.length]);
-
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
-  };
-
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % banners.length);
-  };
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -66,27 +25,27 @@ export default function Hero() {
     },
   };
 
-  const slideVariants = {
-    enter: (direction) => ({
-      x: direction > 0 ? 300 : -300,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
+  const floatVariants = {
+    animate: {
+      y: [0, -10, 0],
       transition: {
-        x: { type: "spring", stiffness: 250, damping: 25 },
-        opacity: { duration: 0.35 },
+        duration: 5,
+        repeat: Infinity,
+        ease: "easeInOut",
       },
     },
-    exit: (direction) => ({
-      x: direction < 0 ? 300 : -300,
-      opacity: 0,
+  };
+
+  const floatVariantsDelayed = {
+    animate: {
+      y: [0, 10, 0],
       transition: {
-        x: { type: "spring", stiffness: 250, damping: 25 },
-        opacity: { duration: 0.35 },
+        duration: 5,
+        repeat: Infinity,
+        ease: "easeInOut",
+        delay: 1.5,
       },
-    }),
+    },
   };
 
   return (
@@ -111,7 +70,7 @@ export default function Hero() {
           
           {/* Hero Content (Left) */}
           <motion.div
-            className="lg:col-span-6 space-y-6 text-center lg:text-left"
+            className="lg:col-span-7 space-y-6 text-center lg:text-left animate-fade-in"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -128,17 +87,17 @@ export default function Hero() {
               variants={itemVariants}
               className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-none text-slate-800 dark:text-white"
             >
-              Accelerate Your Learning at{" "}
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-600 bg-clip-text text-transparent block mt-2">
+              Unlock Practical Skills at{" "}
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-600 bg-clip-text text-transparent block mt-2 leading-tight">
                 Siddiqui Skills Academy
               </span>
             </motion.h1>
 
             <motion.p
               variants={itemVariants}
-              className="text-slate-600 dark:text-slate-400 text-lg sm:text-xl max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed"
+              className="text-slate-800 dark:text-slate-400 text-lg sm:text-xl max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed"
             >
-              Expert-led guidance for <strong>AFNS</strong> & <strong>PMA</strong> initial tests, <strong>MS Office</strong> masterclasses, <strong>Mobile Graphic Designing</strong>, and private board admission consultancies.
+              Comprehensive training in **military test prep** (PMA & AFNS), **computer tools** (MS Office), and **freelance computer skills** (Graphic Design & Video Editing) to build a rewarding career.
             </motion.p>
 
             <motion.div
@@ -146,7 +105,7 @@ export default function Hero() {
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2"
             >
               <a
-                href="#register"
+                href="/register"
                 className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-4 px-8 rounded-2xl shadow-xl shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300 hover:scale-[1.01]"
               >
                 <span>Enroll in Batch</span>
@@ -163,86 +122,92 @@ export default function Hero() {
             {/* Quick Metrics */}
             <motion.div
               variants={itemVariants}
-              className="grid grid-cols-3 gap-4 pt-6 border-t border-slate-200 dark:border-slate-900 max-w-md mx-auto lg:mx-0"
+              className="grid grid-cols-3 gap-6 pt-6 border-t border-slate-200 dark:border-slate-900 max-w-md mx-auto lg:mx-0"
             >
               <div>
-                <p className="text-2xl font-bold text-slate-800 dark:text-white">95%</p>
-                <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider mt-1">Pass Rate</p>
+                <p className="text-3xl font-extrabold text-slate-900 dark:text-white">95%</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-400 uppercase tracking-wider mt-1.5">Pass Rate</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-800 dark:text-white">100%</p>
-                <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider mt-1">Assurance</p>
+                <p className="text-3xl font-extrabold text-slate-900 dark:text-white">20+</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-400 uppercase tracking-wider mt-1.5">Skills Taught</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-800 dark:text-white">Online</p>
-                <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider mt-1">WhatsApp Lectures</p>
+                <p className="text-3xl font-extrabold text-slate-900 dark:text-white">Online</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-400 uppercase tracking-wider mt-1.5">Home Lectures</p>
               </div>
             </motion.div>
           </motion.div>
 
-          {/* Hero Visual Banner Slider (Right) */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center relative">
-            <div className="relative w-full max-w-lg aspect-[5/4] sm:aspect-square overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-900 shadow-2xl p-2.5">
-              
-              <div className="relative w-full h-full overflow-hidden rounded-2xl bg-slate-950">
-                <AnimatePresence initial={false} mode="wait">
-                  <motion.div
-                    key={currentIndex}
-                    variants={slideVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    className="absolute inset-0 w-full h-full"
-                  >
-                    <Image
-                      src={banners[currentIndex].src}
-                      alt={banners[currentIndex].alt}
-                      fill
-                      priority
-                      className="object-contain"
-                    />
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Arrow controllers */}
-                <button
-                  onClick={handlePrev}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 p-2 rounded-full text-white border border-white/10 transition-colors z-10"
-                  aria-label="Previous banner"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={handleNext}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 p-2 rounded-full text-white border border-white/10 transition-colors z-10"
-                  aria-label="Next banner"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-
-                {/* Banner title display */}
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 pt-10 text-center">
-                  <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-0.5">Active Program</p>
-                  <h4 className="text-sm font-bold text-white tracking-wide">{banners[currentIndex].title}</h4>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Slider Dots */}
-            <div className="flex items-center space-x-2 mt-4">
-              {banners.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentIndex(i)}
-                  className={`h-2.5 rounded-full transition-all duration-300 ${
-                    currentIndex === i ? "w-6 bg-blue-600 dark:bg-blue-400" : "w-2.5 bg-slate-300 dark:bg-slate-800"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ))}
-            </div>
+          {/* Hero Visual Brand Showcase (Right) */}
+          <div className="lg:col-span-5 flex items-center justify-center relative min-h-[400px]">
             
+            {/* Main Logo Container */}
+            <motion.div
+              className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-[40px] bg-slate-950 p-6 border border-slate-200/80 dark:border-slate-800 shadow-2xl flex items-center justify-center z-20"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 70, damping: 15, delay: 0.2 }}
+            >
+              <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-inner">
+                <Image
+                  src="/images/logo.jpeg"
+                  alt="Siddiqui Skills Academy Logo"
+                  fill
+                  priority
+                  sizes="(max-w-768px) 250px, 300px"
+                  className="object-cover scale-105"
+                />
+              </div>
+              {/* Spinning outline light effect */}
+              <div className="absolute inset-0 rounded-[40px] border border-blue-500/15 dark:border-blue-500/30 scale-105 animate-pulse"></div>
+            </motion.div>
+
+            {/* Float Badge 1 - Success */}
+            <motion.div
+              className="absolute p-4.5 glass-panel rounded-2xl z-30 right-[-10px] top-[15%] flex items-center space-x-3 shadow-xl"
+              variants={floatVariants}
+              animate="animate"
+            >
+              <div className="bg-emerald-500/10 p-2.5 rounded-xl text-emerald-600 dark:text-emerald-400">
+                <ShieldCheck className="h-5.5 w-5.5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">ISO Standard</h4>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Quality Training</p>
+              </div>
+            </motion.div>
+
+            {/* Float Badge 2 - Skills */}
+            <motion.div
+              className="absolute p-4.5 glass-panel rounded-2xl z-30 left-[-20px] bottom-[20%] flex items-center space-x-3 shadow-xl"
+              variants={floatVariantsDelayed}
+              animate="animate"
+            >
+              <div className="bg-blue-500/10 p-2.5 rounded-xl text-blue-600 dark:text-blue-400">
+                <Stars className="h-5.5 w-5.5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">20+ Career Skills</h4>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Fiverr, Shopify & SEO</p>
+              </div>
+            </motion.div>
+
+            {/* Float Badge 3 - Counsel */}
+            <motion.div
+              className="absolute p-4 glass-panel rounded-2xl z-10 left-[20%] top-[-10px] flex items-center space-x-2 shadow-lg"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <div className="bg-amber-500/10 p-2 rounded-lg text-amber-600 dark:text-amber-400">
+                <Compass className="h-4.5 w-4.5" />
+              </div>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">ISSB prep support</span>
+            </motion.div>
+
+            {/* Radial glow background */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent -z-10 rounded-full w-[400px] h-[400px] blur-3xl pointer-events-none"></div>
           </div>
           
         </div>

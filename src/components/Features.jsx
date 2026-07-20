@@ -44,11 +44,11 @@ export default function Features() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-xs font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest">Why Choose Us</h2>
-            <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-800 dark:text-white tracking-tight leading-tight">
+            <h2 className="text-sm font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest">Why Choose Us</h2>
+            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
               A Proven Method for Academic Success
             </h3>
-            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-slate-800 dark:text-slate-350 leading-relaxed text-base sm:text-lg">
               At Siddiqui Skills Academy, we bridge the gap between candidate potential and military selection criteria. Our specialized teaching methodology ensures students are mentally, academically, and physically prepared.
             </p>
             
@@ -56,11 +56,11 @@ export default function Features() {
             <div className="p-6 glass-panel-glow rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="bg-blue-500/10 p-2 rounded-xl text-blue-600 dark:text-blue-400">
-                  <Compass className="h-5 w-5" />
+                  <Compass className="h-5.5 w-5.5" />
                 </div>
-                <h4 className="font-bold text-slate-800 dark:text-white text-sm">Full ISSB & Test Guidance</h4>
+                <h4 className="font-bold text-slate-900 dark:text-white text-base">Full ISSB & Test Guidance</h4>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <p className="text-sm text-slate-700 dark:text-slate-400 leading-relaxed">
                 Beyond initial computer testing, we guide PMA candidates on physical requirements, academic interviews, and basic personality profiling.
               </p>
             </div>
@@ -82,8 +82,8 @@ export default function Features() {
                   <div className="bg-slate-100 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-900 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
                     {highlight.icon}
                   </div>
-                  <h4 className="font-bold text-slate-800 dark:text-white text-lg mb-2">{highlight.title}</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{highlight.description}</p>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-xl mb-2">{highlight.title}</h4>
+                  <p className="text-base text-slate-700 dark:text-slate-400 leading-relaxed">{highlight.description}</p>
                 </motion.div>
               ))}
             </div>

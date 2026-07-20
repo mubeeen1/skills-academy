@@ -1,269 +1,507 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Phone, BookOpen, GraduationCap, Send, CheckCircle2, MessageSquare } from "lucide-react";
+import {
+  CheckCircle2, MessageSquare, User, Send, GraduationCap,
+  BookOpen, Upload, FileText, Calendar, MapPin, Mail,
+  AlertCircle,
+} from "lucide-react";
+
+const WEB3FORMS_KEY = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
+const SHEETS_URL    = process.env.NEXT_PUBLIC_SHEETS_URL;
+
+/* ─── helpers ─────────────────────────────────────────────────────────── */
+
+async function submitToWeb3Forms(payload) {
+  const body = new FormData();
+  body.append("access_key",  WEB3FORMS_KEY);
+  body.append("subject",     `New Registration — ${payload.course}`);
+  body.append("from_name",   "Siddiqui Skills Academy");
+  // append every field individually so Web3Forms formats the email nicely
+  Object.entries(payload).forEach(([k, v]) => body.append(k, v ?? ""));
+
+  const res = await fetch("https://api.web3forms.com/submit", {
+    method: "POST",
+    body,
+  });
+  if (!res.ok) throw new Error(`Web3Forms: ${res.status}`);
+  return res.json();
+}
+
+async function submitToGoogleSheets(payload) {
+  const res = await fetch(SHEETS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    mode: "no-cors", // Google Apps Script requires no-cors
+  });
+  // no-cors responses are opaque — we optimistically treat any network
+  // response as a success; actual script errors are visible in Apps Script logs.
+  return { status: "ok" };
+}
+
+/* ─── component ───────────────────────────────────────────────────────── */
 
 export default function RegisterForm() {
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    whatsapp: "",
-    course: "afns",
-    education: "intermediate",
-    notes: "",
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const searchParams = useSearchParams();
 
   const courses = [
-    { value: "afns", label: "AFNS Initial Test Prep" },
-    { value: "pma", label: "PMA Initial Test Prep" },
-    { value: "graphic-designing", label: "Mobile Graphic & Video Editing" },
-    { value: "academic-admissions", label: "Academic Admissions & Certificates" },
+    { value: "afns",    label: "AFNS Entry Test Prep" },
+    { value: "pma",     label: "PMA Initial Test Prep" },
+    { value: "msoffice",label: "MS Office Complete Training" },
+    { value: "digital", label: "Digital Skills Course (See Catalogue)" },
+    { value: "private", label: "Matric / FA Private Admission" },
+  ];
+
+  const digitalCourses = [
+    { value: "photo",           label: "Photo Editing" },
+    { value: "video",           label: "Video Editing" },
+    { value: "graphic",         label: "Graphic Designing" },
+    { value: "logo",            label: "Logo Creator" },
+    { value: "social_creator",  label: "Social Media Creator" },
+    { value: "web_dev",         label: "Web Development" },
+    { value: "it_fundamentals", label: "IT Fundamentals" },
+    { value: "computer_ops",    label: "Computer Operations" },
+    { value: "hacking",         label: "Ethical Hacking" },
+    { value: "fiverr",          label: "Fiverr Freelancing" },
+    { value: "shopify",         label: "Shopify Dropshipping" },
+    { value: "amazon",          label: "Amazon VA / Selling" },
+    { value: "dropshipping",    label: "Drop Shipping Setup" },
+    { value: "seo",             label: "SEO Optimization" },
+    { value: "ads",             label: "Ads Management" },
+    { value: "online_marketing",label: "Online Marketing" },
+    { value: "email",           label: "Email Creation & Setup" },
+    { value: "social_account",  label: "Social Account Setup" },
+    { value: "monetization",    label: "Account Monetization" },
+    { value: "business_mgmt",   label: "Business Management" },
   ];
 
   const educationLevels = [
-    { value: "matric", label: "Matriculation / O-Levels" },
-    { value: "intermediate", label: "Intermediate / A-Levels" },
-    { value: "bachelors", label: "Bachelors / Undergraduate" },
-    { value: "other", label: "Other" },
+    { value: "matric",       label: "Matriculation (10th Grade)" },
+    { value: "intermediate", label: "Intermediate (12th Grade)" },
+    { value: "bachelors",    label: "Bachelors Degree" },
+    { value: "other",        label: "Other" },
   ];
 
+  const emptyForm = {
+    name: "", fatherName: "", cnic: "", dob: "",
+    email: "", whatsapp: "",
+    currentAddress: "", permanentAddress: "", sameAddress: false,
+    qualification: "intermediate",
+    course: "afns", digitalCourse: "photo",
+    picture: null,
+  };
+
+  const [formData,     setFormData]     = useState(emptyForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess,    setIsSuccess]    = useState(false);
+  const [submitError,  setSubmitError]  = useState(null);
+  // track which backends succeeded
+  const [savedTo,      setSavedTo]      = useState({ email: false, sheets: false });
+
+  /* pre-fill from URL query params */
+  useEffect(() => {
+    const courseParam  = searchParams.get("course");
+    const digitalParam = searchParams.get("digitalCourse");
+    setFormData((prev) => ({
+      ...prev,
+      ...(courses.find((c)  => c.value === courseParam)  ? { course:        courseParam  } : {}),
+      ...(digitalCourses.find((c) => c.value === digitalParam) ? { digitalCourse: digitalParam } : {}),
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  /* ── field handlers ─────────────────────────────────────────────────── */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === "currentAddress" && prev.sameAddress)
+        next.permanentAddress = value;
+      return next;
+    });
   };
 
-  const handleSubmit = (e) => {
+  const handleCnicChange = (e) => {
+    let v = e.target.value.replace(/\D/g, "").slice(0, 13);
+    let f = v.slice(0, 5);
+    if (v.length > 5)  f += "-" + v.slice(5, 12);
+    if (v.length > 12) f += "-" + v.slice(12, 13);
+    setFormData((prev) => ({ ...prev, cnic: f }));
+  };
+
+  const handleAddressCheckbox = (e) => {
+    const checked = e.target.checked;
+    setFormData((prev) => ({
+      ...prev,
+      sameAddress: checked,
+      permanentAddress: checked ? prev.currentAddress : prev.permanentAddress,
+    }));
+  };
+
+  const handlePictureChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) setFormData((prev) => ({ ...prev, picture: file }));
+  };
+
+  /* ── submit ─────────────────────────────────────────────────────────── */
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    // Simulate submission
-    setTimeout(() => {
+    const courseLabel = formData.course === "digital"
+      ? `Digital Skills — ${digitalCourses.find((c) => c.value === formData.digitalCourse)?.label}`
+      : courses.find((c) => c.value === formData.course)?.label ?? formData.course;
+
+    const qualLabel = educationLevels.find((l) => l.value === formData.qualification)?.label ?? formData.qualification;
+
+    const payload = {
+      submittedAt:      new Date().toLocaleString("en-PK", { timeZone: "Asia/Karachi" }),
+      name:             formData.name,
+      fatherName:       formData.fatherName,
+      cnic:             formData.cnic,
+      dob:              formData.dob,
+      email:            formData.email,
+      whatsapp:         formData.whatsapp,
+      currentAddress:   formData.currentAddress,
+      permanentAddress: formData.permanentAddress,
+      qualification:    qualLabel,
+      course:           courseLabel,
+      digitalCourse:    formData.course === "digital"
+        ? (digitalCourses.find((c) => c.value === formData.digitalCourse)?.label ?? "")
+        : "N/A",
+    };
+
+    // run both in parallel — neither failure blocks the other
+    const [web3Result, sheetsResult] = await Promise.allSettled([
+      WEB3FORMS_KEY && WEB3FORMS_KEY !== "your_web3forms_access_key_here"
+        ? submitToWeb3Forms(payload)
+        : Promise.reject(new Error("Web3Forms key not configured")),
+      SHEETS_URL && SHEETS_URL !== "your_google_apps_script_web_app_url_here"
+        ? submitToGoogleSheets(payload)
+        : Promise.reject(new Error("Sheets URL not configured")),
+    ]);
+
+    const emailOk  = web3Result.status   === "fulfilled";
+    const sheetsOk = sheetsResult.status === "fulfilled";
+
+    setSavedTo({ email: emailOk, sheets: sheetsOk });
+
+    if (!emailOk && !sheetsOk) {
+      // Both failed — show error but still offer WhatsApp fallback
+      setSubmitError(
+        "Could not reach the servers. Please use the WhatsApp button below to send your details directly."
+      );
       setIsSubmitting(false);
-      setIsSuccess(true);
-    }, 1200);
+      setIsSuccess(true); // show success screen so WhatsApp link is visible
+      return;
+    }
+
+    setIsSubmitting(false);
+    setIsSuccess(true);
   };
 
-  // Pre-filled WhatsApp link for direct support
+  /* ── WhatsApp deep link ─────────────────────────────────────────────── */
   const getWhatsAppLink = () => {
-    const academyPhone = "923063036421"; // Primary contact from banners
-    const courseLabel = courses.find((c) => c.value === formData.course)?.label || formData.course;
-    const text = `Assalamu Alaikum Siddiqui Skills Academy, I want to register for ${courseLabel}. Here are my details:\n\n*Name:* ${formData.name}\n*Phone:* ${formData.phone}\n*WhatsApp:* ${formData.whatsapp}\n*Education:* ${formData.education}\n*Notes:* ${formData.notes || "None"}`;
+    const academyPhone = "923063036421";
+    const courseLabel = formData.course === "digital"
+      ? `Digital Skills — ${digitalCourses.find((c) => c.value === formData.digitalCourse)?.label}`
+      : (courses.find((c) => c.value === formData.course)?.label ?? formData.course);
+
+    const text = [
+      "Assalamu Alaikum Siddiqui Skills Academy,",
+      "",
+      "I want to register for the upcoming batch.",
+      "",
+      `*Name:* ${formData.name}`,
+      `*Father's Name:* ${formData.fatherName}`,
+      `*CNIC:* ${formData.cnic}`,
+      `*Date of Birth:* ${formData.dob}`,
+      `*Email:* ${formData.email}`,
+      `*WhatsApp:* ${formData.whatsapp}`,
+      `*Current Address:* ${formData.currentAddress}`,
+      `*Permanent Address:* ${formData.permanentAddress}`,
+      `*Qualification:* ${formData.qualification}`,
+      `*Course:* ${courseLabel}`,
+    ].join("\n");
+
     return `https://wa.me/${academyPhone}?text=${encodeURIComponent(text)}`;
   };
 
+  const resetForm = () => { setIsSuccess(false); setSubmitError(null); setFormData(emptyForm); };
+
+  /* ── shared input class ─────────────────────────────────────────────── */
+  const inp = "w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200 text-base";
+  const sel = `${inp} appearance-none cursor-pointer`;
+  const lbl = "text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block";
+
+  /* ── icon helper ────────────────────────────────────────────────────── */
+  const Ico = ({ children }) => (
+    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+      {children}
+    </div>
+  );
+
+  /* ─────────────────────────────────────────────────────────────────── */
   return (
     <section id="register" className="py-24 bg-slate-100 dark:bg-slate-900/50 relative overflow-hidden transition-colors duration-300">
-      <div className="absolute top-[20%] left-[-10%] w-[350px] h-[350px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute top-[20%] left-[-10%] w-[350px] h-[350px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
-        {/* Section Header */}
+
+        {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-xs font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-3">Admission Portal</h2>
-          <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-800 dark:text-white tracking-tight">Register For Next Batch</h3>
-          <div className="mt-4 h-1 w-20 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full"></div>
-          <p className="text-slate-600 dark:text-slate-400 mt-4 text-sm sm:text-base">
+          <h2 className="text-sm font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-3">Admission Portal</h2>
+          <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">Register For Next Batch</h3>
+          <div className="mt-4 h-1.5 w-24 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full" />
+          <p className="text-slate-800 dark:text-slate-400 mt-5 text-base sm:text-lg">
             Secure your seat by filling the registration form. Our coordinator will contact you shortly with scheduling details.
           </p>
         </div>
 
-        {/* Form Container */}
+        {/* Form Card */}
         <div className="glass-panel-glow rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-10 relative">
-          
           <AnimatePresence mode="wait">
+
+            {/* ── Form ── */}
             {!isSuccess ? (
-              <motion.form
-                key="form"
-                onSubmit={handleSubmit}
-                className="space-y-6"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.3 }}
+              <motion.form key="form" onSubmit={handleSubmit}
+                className="flex flex-col space-y-6"
+                initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.3 }}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                   {/* Name */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Full Name</label>
+                    <label className={lbl}>Full Name</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-                        <User className="h-5 w-5" />
-                      </div>
-                      <input
-                        type="text"
-                        name="name"
-                        required
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 hover:border-slate-300 dark:hover:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200"
-                        placeholder="John Doe"
-                      />
+                      <Ico><User className="h-5 w-5" /></Ico>
+                      <input type="text" name="name" required value={formData.name} onChange={handleChange} className={inp} placeholder="John Doe" />
                     </div>
                   </div>
 
-                  {/* Phone */}
+                  {/* Father's Name */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Phone Number</label>
+                    <label className={lbl}>Father's Name</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-                        <Phone className="h-5 w-5" />
-                      </div>
-                      <input
-                        type="tel"
-                        name="phone"
-                        required
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 hover:border-slate-300 dark:hover:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200"
-                        placeholder="0306 3036421"
-                      />
+                      <Ico><User className="h-5 w-5" /></Ico>
+                      <input type="text" name="fatherName" required value={formData.fatherName} onChange={handleChange} className={inp} placeholder="Father's Full Name" />
+                    </div>
+                  </div>
+
+                  {/* CNIC */}
+                  <div className="space-y-2">
+                    <label className={lbl}>CNIC / B-Form Number</label>
+                    <div className="relative">
+                      <Ico><FileText className="h-5 w-5" /></Ico>
+                      <input type="text" name="cnic" required value={formData.cnic} onChange={handleCnicChange} className={inp} placeholder="37405-1234567-1" />
+                    </div>
+                  </div>
+
+                  {/* DOB */}
+                  <div className="space-y-2">
+                    <label className={lbl}>Date of Birth</label>
+                    <div className="relative">
+                      <Ico><Calendar className="h-5 w-5" /></Ico>
+                      <input type="date" name="dob" required value={formData.dob} onChange={handleChange} className={`${inp} cursor-pointer`} />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <label className={lbl}>Email Address</label>
+                    <div className="relative">
+                      <Ico><Mail className="h-5 w-5" /></Ico>
+                      <input type="email" name="email" required value={formData.email} onChange={handleChange} className={inp} placeholder="email@domain.com" />
                     </div>
                   </div>
 
                   {/* WhatsApp */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">WhatsApp Number</label>
+                    <label className={lbl}>WhatsApp Number</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-                        <MessageSquare className="h-5 w-5" />
-                      </div>
-                      <input
-                        type="tel"
-                        name="whatsapp"
-                        required
-                        value={formData.whatsapp}
-                        onChange={handleChange}
-                        className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 hover:border-slate-300 dark:hover:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200"
-                        placeholder="0306 3036421"
-                      />
+                      <Ico><MessageSquare className="h-5 w-5" /></Ico>
+                      <input type="tel" name="whatsapp" required value={formData.whatsapp} onChange={handleChange} className={inp} placeholder="03xx-xxxxxxx" />
                     </div>
                   </div>
 
-                  {/* Course Dropdown */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Select Course</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-                        <BookOpen className="h-5 w-5" />
-                      </div>
-                      <select
-                        name="course"
-                        value={formData.course}
-                        onChange={handleChange}
-                        className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 hover:border-slate-300 dark:hover:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200 appearance-none cursor-pointer"
-                      >
-                        {courses.map((course) => (
-                          <option key={course.value} value={course.value}>
-                            {course.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Education level */}
+                  {/* Current Address */}
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Last Qualification</label>
+                    <label className={lbl}>Current Address</label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-                        <GraduationCap className="h-5 w-5" />
-                      </div>
-                      <select
-                        name="education"
-                        value={formData.education}
-                        onChange={handleChange}
-                        className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 hover:border-slate-300 dark:hover:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200 appearance-none cursor-pointer"
-                      >
-                        {educationLevels.map((level) => (
-                          <option key={level.value} value={level.value}>
-                            {level.label}
-                          </option>
+                      <Ico><MapPin className="h-5 w-5" /></Ico>
+                      <input type="text" name="currentAddress" required value={formData.currentAddress} onChange={handleChange} className={inp} placeholder="House No, Street, Mohalla, City" />
+                    </div>
+                  </div>
+
+                  {/* Permanent Address */}
+                  <div className="space-y-2 md:col-span-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
+                      <label className={lbl}>Permanent Address</label>
+                      <label className="inline-flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-400 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <input type="checkbox" checked={formData.sameAddress} onChange={handleAddressCheckbox}
+                          className="rounded border-slate-300 dark:bg-slate-950 dark:border-slate-800 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                        <span>Same as Current Address</span>
+                      </label>
+                    </div>
+                    <div className="relative">
+                      <Ico><MapPin className="h-5 w-5" /></Ico>
+                      <input type="text" name="permanentAddress" required disabled={formData.sameAddress}
+                        value={formData.permanentAddress} onChange={handleChange}
+                        className={`${inp} disabled:opacity-60 disabled:bg-slate-50 dark:disabled:bg-slate-900`}
+                        placeholder="House No, Street, Mohalla, City" />
+                    </div>
+                  </div>
+
+                  {/* Qualification */}
+                  <div className="space-y-2">
+                    <label className={lbl}>Last Qualification</label>
+                    <div className="relative">
+                      <Ico><GraduationCap className="h-5 w-5" /></Ico>
+                      <select name="qualification" value={formData.qualification} onChange={handleChange} className={sel}>
+                        {educationLevels.map((l) => (
+                          <option key={l.value} value={l.value} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-white">{l.label}</option>
                         ))}
                       </select>
                     </div>
                   </div>
+
+                  {/* Course */}
+                  <div className="space-y-2">
+                    <label className={lbl}>Select Course</label>
+                    <div className="relative">
+                      <Ico><BookOpen className="h-5 w-5" /></Ico>
+                      <select name="course" value={formData.course} onChange={handleChange} className={sel}>
+                        {courses.map((c) => (
+                          <option key={c.value} value={c.value} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-white">{c.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Digital Sub-category */}
+                  {formData.course === "digital" && (
+                    <motion.div className="space-y-2 md:col-span-2"
+                      initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25 }}
+                    >
+                      <label className={lbl}>
+                        Select Digital Skill
+                        <span className="ml-2 text-[10px] font-bold text-blue-600 dark:text-blue-400 normal-case tracking-normal bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                          Auto-filled
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Ico><BookOpen className="h-5 w-5" /></Ico>
+                        <select name="digitalCourse" value={formData.digitalCourse} onChange={handleChange}
+                          className="w-full bg-white dark:bg-slate-950 border border-blue-500/50 dark:border-blue-500/30 hover:border-blue-500 focus:border-blue-600 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200 appearance-none cursor-pointer text-base">
+                          {digitalCourses.map((dc) => (
+                            <option key={dc.value} value={dc.value} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-white">{dc.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Picture Upload */}
+                  <div className="space-y-2 md:col-span-2">
+                    <label className={lbl}>Fresh Picture</label>
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500/50 rounded-2xl cursor-pointer bg-white dark:bg-slate-950 transition-colors duration-200">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="h-8 w-8 text-slate-400 dark:text-slate-500 mb-2" />
+                        <p className="text-sm text-slate-700 dark:text-slate-400 font-bold">
+                          {formData.picture ? formData.picture.name : "Click to upload fresh picture"}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">PNG, JPG or JPEG</p>
+                      </div>
+                      <input type="file" name="picture" accept="image/*" required onChange={handlePictureChange} className="hidden" />
+                    </label>
+                  </div>
                 </div>
 
-                {/* Notes */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Additional Message (Optional)</label>
-                  <textarea
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleChange}
-                    rows="3"
-                    className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 hover:border-slate-300 dark:hover:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-white rounded-2xl p-4 outline-none transition-colors duration-200 resize-none"
-                    placeholder="Enter any specific queries or requirements here..."
-                  ></textarea>
-                </div>
-
-                {/* Submit button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-4 rounded-2xl transition-all duration-300 shadow-xl disabled:opacity-50"
+                {/* Submit */}
+                <button type="submit" disabled={isSubmitting}
+                  className="group w-full sm:w-auto flex items-center justify-center space-x-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/20 text-white font-extrabold py-4 px-10 rounded-2xl transition-all duration-300 shadow-lg shadow-blue-500/10 disabled:opacity-50 text-base cursor-pointer self-center mt-2"
                 >
                   {isSubmitting ? (
-                    <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <>
+                      <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Submitting…</span>
+                    </>
                   ) : (
                     <>
                       <span>Submit Registration</span>
-                      <Send className="h-4.5 w-4.5" />
+                      <Send className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-0.5" />
                     </>
                   )}
                 </button>
               </motion.form>
+
+            /* ── Success Screen ── */
             ) : (
-              <motion.div
-                key="success"
-                className="text-center py-12 space-y-6"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
+              <motion.div key="success" className="text-center py-12 space-y-6"
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }}
               >
-                <div className="inline-flex bg-emerald-500/10 p-4 rounded-full text-emerald-500 dark:text-emerald-400 border border-emerald-500/25 mb-4 animate-bounce">
-                  <CheckCircle2 className="h-12 w-12" />
+                <div className={`inline-flex p-4 rounded-full border mb-4 ${submitError
+                  ? "bg-amber-500/10 text-amber-500 border-amber-500/25"
+                  : "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/25 animate-bounce"
+                }`}>
+                  {submitError
+                    ? <AlertCircle className="h-12 w-12" />
+                    : <CheckCircle2 className="h-12 w-12" />
+                  }
                 </div>
-                <h4 className="text-2xl font-bold text-slate-800 dark:text-white">Registration Submitted!</h4>
-                <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-                  Thank you, <strong>{formData.name}</strong>. Your form has been recorded. Click below to connect with us directly on WhatsApp and secure your batch timing!
+
+                <h4 className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                  {submitError ? "Submission Issue" : "Registration Submitted!"}
+                </h4>
+
+                {/* Saved-to badges */}
+                {!submitError && (
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <span className={`inline-flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${savedTo.email
+                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                      : "bg-slate-100 dark:bg-slate-900 text-slate-500 border-slate-300 dark:border-slate-800"
+                    }`}>
+                      <span>{savedTo.email ? "✓" : "✗"}</span>
+                      <span>Email Notification</span>
+                    </span>
+                    <span className={`inline-flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${savedTo.sheets
+                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                      : "bg-slate-100 dark:bg-slate-900 text-slate-500 border-slate-300 dark:border-slate-800"
+                    }`}>
+                      <span>{savedTo.sheets ? "✓" : "✗"}</span>
+                      <span>Google Sheets</span>
+                    </span>
+                  </div>
+                )}
+
+                <p className="text-slate-800 dark:text-slate-300 max-w-md mx-auto text-base sm:text-lg">
+                  {submitError
+                    ? submitError
+                    : <>Thank you, <strong>{formData.name}</strong>. Your registration has been saved. Connect on WhatsApp to confirm your batch timing!</>
+                  }
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 max-w-md mx-auto">
-                  <a
-                    href={getWhatsAppLink()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-emerald-500/10 transition-all duration-300 hover:scale-[1.02]"
-                  >
-                    <MessageSquare className="h-5 w-5" />
-                    <span>Send Message on WhatsApp</span>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 max-w-md mx-auto">
+                  <a href={getWhatsAppLink()} target="_blank" rel="noopener noreferrer"
+                    className="group inline-flex items-center justify-center space-x-2.5 bg-emerald-600 hover:bg-emerald-500 hover:scale-[1.02] text-white font-bold py-5 px-6 rounded-2xl shadow-xl shadow-emerald-500/10 transition-all duration-300 flex-1 text-base cursor-pointer">
+                    <MessageSquare className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+                    <span>Send on WhatsApp</span>
                   </a>
-                  <button
-                    onClick={() => {
-                      setIsSuccess(false);
-                      setFormData({
-                        name: "",
-                        phone: "",
-                        whatsapp: "",
-                        course: "afns",
-                        education: "intermediate",
-                        notes: "",
-                      });
-                    }}
-                    className="inline-flex items-center justify-center bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold py-4 px-6 rounded-2xl transition-all duration-300 hover:bg-slate-300 dark:hover:bg-slate-850"
-                  >
-                    <span>Register Another</span>
+                  <button onClick={resetForm}
+                    className="inline-flex items-center justify-center bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold py-5 px-6 rounded-2xl transition-all duration-300 hover:bg-slate-300 dark:hover:bg-slate-800 text-base cursor-pointer">
+                    Register Another
                   </button>
                 </div>
               </motion.div>
             )}
+
           </AnimatePresence>
-          
         </div>
       </div>
     </section>

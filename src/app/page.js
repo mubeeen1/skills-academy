@@ -1,19 +1,19 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import Courses from "@/components/Courses";
+import CoursesOverview from "@/components/CoursesOverview";
 import Features from "@/components/Features";
-import RegisterForm from "@/components/RegisterForm";
+import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
     <>
       <Header />
-      <main className="relative bg-slate-950 min-h-screen">
+      <main className="relative bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
         <Hero />
-        <Courses />
+        <CoursesOverview />
         <Features />
-        <RegisterForm />
+        <ContactForm />
       </main>
       <Footer />
     </>

@@ -22,6 +22,9 @@ export const metadata = {
   description: "Accelerate your career and prepare for PMA initial tests, AFNS nursing initial tests, and master MS Office with expert-led training at Siddiqui Skills Academy.",
   keywords: "Siddiqui Skills Academy, PMA Preparation, AFNS Test Preparation, MS Office Training, Initial Test Preparation, Forces Academy, Computer Course, Army Initial Test, AFNS Initial Test",
   authors: [{ name: "Siddiqui Skills Academy" }],
+  icons: {
+    icon: "/images/logo.jpeg",
+  },
 };
 
 export default function RootLayout({ children }) {

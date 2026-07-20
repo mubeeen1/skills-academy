@@ -48,10 +48,11 @@ export default function Header() {
   };
 
   const navLinks = [
-    { name: "Home", href: "#home" },
-    { name: "Courses", href: "#courses" },
-    { name: "Why Us", href: "#why-us" },
-    { name: "Register", href: "#register" },
+    { name: "Home", href: "/#home" },
+    { name: "Courses", href: "/courses" },
+    { name: "Register", href: "/register" },
+    { name: "Why Us", href: "/#why-us" },
+    { name: "Contact", href: "/#contact" },
   ];
 
   return (
@@ -65,7 +66,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo & Brand */}
-          <a href="#home" className="flex items-center space-x-3 group">
+          <a href="/#home" className="flex items-center space-x-3 group">
             <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-md group-hover:scale-105 transition-transform duration-300 bg-black">
               <Image
                 src="/images/logo.jpeg"
@@ -92,7 +93,7 @@ export default function Header() {
                 <a
                   key={link.name}
                   href={link.href}
-                  className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                  className="text-sm font-semibold text-slate-800 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
                 >
                   {link.name}
                 </a>
@@ -113,7 +114,7 @@ export default function Header() {
 
             {/* CTA Button */}
             <a
-              href="#register"
+              href="/register"
               className="relative group overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300"
             >
               <span className="relative z-10">Enroll Now</span>
@@ -160,14 +161,14 @@ export default function Header() {
                   key={link.name}
                   href={link.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-3 rounded-xl text-base font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-900 transition-all duration-200"
+                  className="block px-3 py-3 rounded-xl text-base font-semibold text-slate-800 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-900 transition-all duration-200"
                 >
                   {link.name}
                 </a>
               ))}
               <div className="px-3 pt-4">
                 <a
-                  href="#register"
+                  href="/register"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="block w-full text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg"
                 >
