@@ -13,7 +13,7 @@
 
 An optimized, glassmorphic admissions portal and CRM engineered with **Next.js 14** and **Tailwind CSS**. Built to streamline candidate registrations, host student photographs, and sync form submissions to cloud spreadsheets.
 
-[Explore Programs](file:///c:/Users/mubee/Documents/PROJECTS/skills-academy/src/app/courses/page.js) • [Online Registration](file:///c:/Users/mubee/Documents/PROJECTS/skills-academy/src/app/register/page.js) • [Helpline Support](tel:+923231774948)
+[Explore Programs](src/app/courses/page.js) • [Online Registration](src/app/register/page.js) • [Helpline Support](tel:+923231774948)
 
 </div>
 
@@ -35,11 +35,11 @@ An optimized, glassmorphic admissions portal and CRM engineered with **Next.js 1
 
 | Component | File Path | Description |
 | :--- | :--- | :--- |
-| **Header** | [`Header.jsx`](file:///c:/Users/mubee/Documents/PROJECTS/skills-academy/src/components/Header.jsx) | Global navigation bar with route-specific navigation filtering and theme toggler. |
-| **Courses catalog** | [`Courses.jsx`](file:///c:/Users/mubee/Documents/PROJECTS/skills-academy/src/components/Courses.jsx) | Exhaustive eligibility lists, syllabus guidelines, and course parameters. |
-| **Skills Directory** | [`Skills.jsx`](file:///c:/Users/mubee/Documents/PROJECTS/skills-academy/src/components/Skills.jsx) | Animated tab lists showcasing creative arts, freelancing, and development courses. |
-| **Registration CRM** | [`RegisterForm.jsx`](file:///c:/Users/mubee/Documents/PROJECTS/skills-academy/src/components/RegisterForm.jsx) | Unified registration form featuring direct photo upload triggers and custom date-picker. |
-| **Contact Center** | [`ContactForm.jsx`](file:///c:/Users/mubee/Documents/PROJECTS/skills-academy/src/components/ContactForm.jsx) | Direct email dispatcher and pre-formatted WhatsApp callouts. |
+| **Header** | [`Header.jsx`](src/components/Header.jsx) | Global navigation bar with route-specific navigation filtering and theme toggler. |
+| **Courses catalog** | [`Courses.jsx`](src/components/Courses.jsx) | Exhaustive eligibility lists, syllabus guidelines, and course parameters. |
+| **Skills Directory** | [`Skills.jsx`](src/components/Skills.jsx) | Animated tab lists showcasing creative arts, freelancing, and development courses. |
+| **Registration CRM** | [`RegisterForm.jsx`](src/components/RegisterForm.jsx) | Unified registration form featuring direct photo upload triggers and custom date-picker. |
+| **Contact Center** | [`ContactForm.jsx`](src/components/ContactForm.jsx) | Direct email dispatcher and pre-formatted WhatsApp callouts. |
 
 ---
 
