@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, Mail, MapPin, Send, CheckCircle2, MessageSquare, User, Info } from "lucide-react";
 
+const WEB3FORMS_KEY = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
+
 export default function ContactForm() {
   const [formData, setFormData] = useState({
     name: "",
@@ -21,24 +23,48 @@ export default function ContactForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    const payload = {
+      submittedAt: new Date().toLocaleString("en-PK", { timeZone: "Asia/Karachi" }),
+      name: formData.name,
+      phone: formData.phone,
+      email: formData.email,
+      subject: formData.subject,
+      message: formData.message,
+    };
+
+    try {
+      const body = new FormData();
+      body.append("access_key", WEB3FORMS_KEY || "");
+      body.append("subject", `New Academy Inquiry: ${formData.subject}`);
+      body.append("from_name", "SSA Contact Page");
+      Object.entries(payload).forEach(([k, v]) => body.append(k, v ?? ""));
+
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body,
+      });
+
+      if (!res.ok) throw new Error("Email delivery failed");
+    } catch (err) {
+      console.error("Web3Forms Contact Error:", err);
+    } finally {
       setIsSubmitting(false);
       setIsSuccess(true);
-    }, 1000);
+    }
   };
 
   const getWhatsAppLink = () => {
-    const academyPhone = "923063036421";
+    const academyPhone = "923231774948";
     const text = `Assalamu Alaikum Siddiqui Skills Academy,\n\nI have a query regarding the academy.\n\n*Name:* ${formData.name}\n*Phone:* ${formData.phone}\n*Email:* ${formData.email}\n*Subject:* ${formData.subject}\n*Message:* ${formData.message}`;
     return `https://wa.me/${academyPhone}?text=${encodeURIComponent(text)}`;
   };
 
   return (
-    <section id="contact" className="py-24 bg-slate-100 dark:bg-slate-900/50 relative overflow-hidden transition-colors duration-300">
+    <section id="contact" className="py-24 bg-slate-50/60 dark:bg-slate-900/50 relative overflow-hidden transition-colors duration-300">
       <div className="absolute top-[30%] right-[-10%] w-[350px] h-[350px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -71,9 +97,9 @@ export default function ContactForm() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white text-base">Helpline Support</h4>
                     <div className="mt-2 space-y-1 text-sm text-slate-700 dark:text-slate-400 font-bold">
-                      <p>0306-3036421 (Primary)</p>
+                      <p>0323-1774948 (Primary)</p>
                       <p>0313-6701631</p>
-                      <p>0323-1774948</p>
+                      <p>0306-3036421</p>
                     </div>
                   </div>
                 </div>
@@ -113,7 +139,7 @@ export default function ContactForm() {
                 <p className="text-xs text-emerald-100">Instantly talk to our admissions officer</p>
               </div>
               <a
-                href="https://wa.me/923063036421"
+                href="https://wa.me/923231774948"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white hover:bg-emerald-50 text-emerald-700 p-3.5 rounded-2xl shadow-md transition-all duration-300 hover:scale-105"
@@ -256,9 +282,9 @@ export default function ContactForm() {
                     <div className="inline-flex bg-emerald-500/10 p-4.5 rounded-full text-emerald-500 dark:text-emerald-400 border border-emerald-500/20 animate-bounce">
                       <CheckCircle2 className="h-12 w-12" />
                     </div>
-                    <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">Message Formed!</h3>
+                    <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">Message Sent!</h3>
                     <p className="text-slate-800 dark:text-slate-350 max-w-md mx-auto text-base sm:text-lg">
-                      Thank you for reaching out, <strong>{formData.name}</strong>. Your message is ready to be sent directly to our WhatsApp support team. Click below to confirm!
+                      Thank you for reaching out, <strong>{formData.name}</strong>. Your inquiry has been sent to our inbox via email. You can also connect with us directly on WhatsApp for an instant response!
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 max-w-md mx-auto">

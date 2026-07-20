@@ -118,7 +118,7 @@ export default function Courses() {
   ];
 
   return (
-    <section id="courses" className="py-24 bg-slate-100 dark:bg-slate-900/50 relative overflow-hidden transition-colors duration-300">
+    <section id="courses" className="py-24 bg-slate-50/60 dark:bg-slate-900/50 relative overflow-hidden transition-colors duration-300">
       <div className="absolute top-[20%] left-[50%] -translate-x-[50%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

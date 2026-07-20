@@ -6,14 +6,14 @@
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
   --secondary: #d97706;
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card-bg: rgba(255, 255, 255, 0.75);
-  --card-border: rgba(15, 23, 42, 0.08);
-  --border-glow: rgba(37, 99, 235, 0.1);
-  --text-muted: #475569;
-  --text-muted-darker: #334155;
-  --glow-opacity: 0.04;
+  --background: #ffffff;
+  --foreground: #0b0f19;
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-border: rgba(15, 23, 42, 0.05);
+  --border-glow: rgba(37, 99, 235, 0.08);
+  --text-muted: #334155;
+  --text-muted-darker: #0f172a;
+  --glow-opacity: 0.02;
 }
 
 :root.dark {

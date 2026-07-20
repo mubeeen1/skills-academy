@@ -6,41 +6,42 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, MessageSquare, User, Send, GraduationCap,
   BookOpen, Upload, FileText, Calendar, MapPin, Mail,
-  AlertCircle, ImageIcon,
+  AlertCircle, ImageIcon, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 const WEB3FORMS_KEY = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
 const SHEETS_URL    = process.env.NEXT_PUBLIC_SHEETS_URL;
+const IMGBB_KEY     = process.env.NEXT_PUBLIC_IMGBB_KEY;
 
 const MAX_FILE_MB   = 3;
 const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
-/** Convert a File to a pure base64 string (no data-URL prefix) */
-const fileToBase64 = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload  = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
+/** Upload an image file to ImgBB and return its direct image URL */
+async function uploadToImgbb(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
+    method: "POST",
+    body: formData,
   });
 
-/**
- * Web3Forms — sends all text fields + photo as email attachment.
- * Docs: https://docs.web3forms.com  (attachment key = "attachment")
- */
-async function submitToWeb3Forms(payload, pictureFile) {
+  if (!res.ok) throw new Error(`ImgBB upload failed: ${res.status}`);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error?.message || "ImgBB upload rejected");
+  return json.data.url; // Direct public URL
+}
+
+/** Web3Forms submission */
+async function submitToWeb3Forms(payload) {
   const body = new FormData();
   body.append("access_key", WEB3FORMS_KEY);
   body.append("subject",    `New Registration — ${payload.course}`);
   body.append("from_name",  "Siddiqui Skills Academy");
 
-  // text fields
   Object.entries(payload).forEach(([k, v]) => body.append(k, v ?? "—"));
-
-  // photo attachment (Web3Forms accepts "attachment" key)
-  if (pictureFile) body.append("attachment", pictureFile, pictureFile.name);
 
   const res = await fetch("https://api.web3forms.com/submit", {
     method: "POST",
@@ -52,29 +53,17 @@ async function submitToWeb3Forms(payload, pictureFile) {
   return json;
 }
 
-/**
- * Google Sheets via Apps Script.
- * Sends all text fields + base64 image so the script can:
- *   1. Save the photo to a Google Drive folder
- *   2. Write the Drive link into the Sheet row
- */
-async function submitToGoogleSheets(payload, imageBase64, imageName, imageMimeType) {
-  const body = JSON.stringify({
-    ...payload,
-    imageBase64:   imageBase64   ?? null,
-    imageName:     imageName     ?? null,
-    imageMimeType: imageMimeType ?? null,
-  });
-
-  // no-cors required for Apps Script — response is opaque but the script runs fine
-  await fetch(SHEETS_URL, {
+/** Google Sheets submission via SheetDB */
+async function submitToGoogleSheets(payload) {
+  const res = await fetch(SHEETS_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body,
-    mode: "no-cors",
+    body: JSON.stringify({ data: [payload] }),
   });
 
-  return { status: "ok" };
+  if (!res.ok) throw new Error(`Sheets HTTP ${res.status}`);
+  const json = await res.json();
+  return json;
 }
 
 /* ─── component ───────────────────────────────────────────────────────── */
@@ -129,12 +118,30 @@ export default function RegisterForm() {
     picture: null,
   };
 
-  const [formData,     setFormData]     = useState(emptyForm);
-  const [fileError,    setFileError]    = useState(null);   // picture size/type error
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess,    setIsSuccess]    = useState(false);
-  const [submitError,  setSubmitError]  = useState(null);
-  const [savedTo,      setSavedTo]      = useState({ email: false, sheets: false });
+  const [formData,         setFormData]         = useState(emptyForm);
+  const [fileError,        setFileError]        = useState(null);
+  const [isSubmitting,     setIsSubmitting]     = useState(false);
+  const [isSuccess,        setIsSuccess]        = useState(false);
+  const [submitError,      setSubmitError]      = useState(null);
+  const [savedTo,          setSavedTo]          = useState({ email: false, sheets: false });
+  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState("");
+
+  // Custom modern calendar states
+  const [dobInputText, setDobInputText] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear() - 18);
+
+  const monthsList = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const yearsList = Array.from({ length: currentYear - 1945 + 1 }, (_, i) => currentYear - i);
+
+  const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
 
   /* ── pre-fill from URL query params ──────────────────────────────────── */
   useEffect(() => {
@@ -147,6 +154,20 @@ export default function RegisterForm() {
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  /* ── bidirectional sync for DOB input ────────────────────────────────── */
+  useEffect(() => {
+    if (formData.dob) {
+      const [y, m, d] = formData.dob.split("-");
+      const formatted = `${d}-${m}-${y}`;
+      if (dobInputText !== formatted) {
+        setDobInputText(formatted);
+        setCalendarMonth(parseInt(m, 10) - 1);
+        setCalendarYear(parseInt(y, 10));
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.dob]);
 
   /* ── field handlers ──────────────────────────────────────────────────── */
   const handleChange = (e) => {
@@ -166,6 +187,57 @@ export default function RegisterForm() {
     setFormData((prev) => ({ ...prev, cnic: f }));
   };
 
+  const handleDobInputChange = (e) => {
+    let val = e.target.value.replace(/\D/g, "").slice(0, 8);
+    let formatted = "";
+    if (val.length > 0) formatted += val.slice(0, Math.min(val.length, 2));
+    if (val.length > 2) formatted += "-" + val.slice(2, Math.min(val.length, 4));
+    if (val.length > 4) formatted += "-" + val.slice(4, 8);
+
+    setDobInputText(formatted);
+
+    if (formatted.length === 10) {
+      const [d, m, y] = formatted.split("-");
+      const parsedDate = `${y}-${m}-${d}`;
+      const dateObj = new Date(parsedDate);
+      if (!isNaN(dateObj.getTime())) {
+        setFormData((prev) => ({ ...prev, dob: parsedDate }));
+        setCalendarMonth(parseInt(m, 10) - 1);
+        setCalendarYear(parseInt(y, 10));
+      }
+    }
+  };
+
+  const selectDate = (day) => {
+    const d = String(day).padStart(2, "0");
+    const m = String(calendarMonth + 1).padStart(2, "0");
+    const y = calendarYear;
+    
+    setFormData((prev) => ({ ...prev, dob: `${y}-${m}-${d}` }));
+    setDobInputText(`${d}-${m}-${y}`);
+    setShowCalendar(false);
+  };
+
+  const handlePrevMonth = () => {
+    setCalendarMonth((prev) => {
+      if (prev === 0) {
+        setCalendarYear((y) => y - 1);
+        return 11;
+      }
+      return prev - 1;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCalendarMonth((prev) => {
+      if (prev === 11) {
+        setCalendarYear((y) => y + 1);
+        return 0;
+      }
+      return prev + 1;
+    });
+  };
+
   const handleAddressCheckbox = (e) => {
     const checked = e.target.checked;
     setFormData((prev) => ({
@@ -181,7 +253,7 @@ export default function RegisterForm() {
 
     if (file.size > MAX_FILE_BYTES) {
       setFileError(`Photo must be under ${MAX_FILE_MB} MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)} MB.`);
-      e.target.value = ""; // reset input
+      e.target.value = "";
       return;
     }
     if (!file.type.startsWith("image/")) {
@@ -205,6 +277,21 @@ export default function RegisterForm() {
 
     const qualLabel = educationLevels.find((l) => l.value === formData.qualification)?.label ?? formData.qualification;
 
+    const isConfigured = (key, placeholder) => key && key !== placeholder;
+
+    // 1. Upload photo to ImgBB first (client-side)
+    let photoUrl = "No photo uploaded";
+    if (formData.picture && isConfigured(IMGBB_KEY, "your_imgbb_api_key_here")) {
+      try {
+        photoUrl = await uploadToImgbb(formData.picture);
+      } catch (err) {
+        console.error("ImgBB upload error, falling back:", err);
+        photoUrl = "Upload failed / key error";
+      }
+    }
+    setUploadedPhotoUrl(photoUrl);
+
+    // Prepare payload with plain URL text
     const textPayload = {
       submittedAt:      new Date().toLocaleString("en-PK", { timeZone: "Asia/Karachi" }),
       name:             formData.name,
@@ -220,37 +307,46 @@ export default function RegisterForm() {
       digitalCourse:    formData.course === "digital"
         ? (digitalCourses.find((c) => c.value === formData.digitalCourse)?.label ?? "")
         : "N/A",
+      photoUrl:         photoUrl,
     };
 
-    /* convert photo to base64 once, reuse for both backends */
-    let imageBase64   = null;
-    let imageName     = null;
-    let imageMimeType = null;
+    let sheetsOk = false;
+    let emailOk = false;
 
-    if (formData.picture) {
+    // 2. Submit to Google Sheets (CORS enabled SheetDB)
+    if (isConfigured(SHEETS_URL, "your_google_apps_script_web_app_url_here")) {
       try {
-        imageBase64   = await fileToBase64(formData.picture);
-        imageName     = formData.picture.name;
-        imageMimeType = formData.picture.type;
-      } catch {
-        // non-fatal — proceed without image
+        const sheetDbPayload = {
+          "Submitted At":      textPayload.submittedAt,
+          "Full Name":         textPayload.name,
+          "Father's Name":     textPayload.fatherName,
+          "CNIC":              textPayload.cnic,
+          "Date of Birth":     textPayload.dob,
+          "Email":             textPayload.email,
+          "WhatsApp":          textPayload.whatsapp,
+          "Current Address":   textPayload.currentAddress,
+          "Permanent Address": textPayload.permanentAddress,
+          "Qualification":     textPayload.qualification,
+          "Course":            textPayload.course,
+          "Digital Sub-Course": textPayload.digitalCourse,
+          "Photo Link":        textPayload.photoUrl,
+        };
+        await submitToGoogleSheets(sheetDbPayload);
+        sheetsOk = true;
+      } catch (err) {
+        console.error("Google Sheets Submission Error:", err);
       }
     }
 
-    const isConfigured = (key, placeholder) => key && key !== placeholder;
-
-    const [web3Result, sheetsResult] = await Promise.allSettled([
-      isConfigured(WEB3FORMS_KEY, "your_web3forms_access_key_here")
-        ? submitToWeb3Forms(textPayload, formData.picture)
-        : Promise.reject(new Error("Web3Forms key not configured")),
-
-      isConfigured(SHEETS_URL, "your_google_apps_script_web_app_url_here")
-        ? submitToGoogleSheets(textPayload, imageBase64, imageName, imageMimeType)
-        : Promise.reject(new Error("Sheets URL not configured")),
-    ]);
-
-    const emailOk  = web3Result.status   === "fulfilled";
-    const sheetsOk = sheetsResult.status === "fulfilled";
+    // 3. Submit to Web3Forms (bypasses attachment restrictions by sending standard text URL)
+    if (isConfigured(WEB3FORMS_KEY, "your_web3forms_access_key_here")) {
+      try {
+        await submitToWeb3Forms(textPayload);
+        emailOk = true;
+      } catch (err) {
+        console.error("Web3Forms Submission Error:", err);
+      }
+    }
 
     setSavedTo({ email: emailOk, sheets: sheetsOk });
 
@@ -266,7 +362,7 @@ export default function RegisterForm() {
 
   /* ── WhatsApp deep-link ──────────────────────────────────────────────── */
   const getWhatsAppLink = () => {
-    const phone = "923063036421";
+    const phone = "923231774948";
     const courseLabel = formData.course === "digital"
       ? `Digital Skills — ${digitalCourses.find((c) => c.value === formData.digitalCourse)?.label}`
       : courses.find((c) => c.value === formData.course)?.label ?? formData.course;
@@ -286,6 +382,7 @@ export default function RegisterForm() {
       `*Permanent Address:* ${formData.permanentAddress}`,
       `*Qualification:* ${formData.qualification}`,
       `*Course:* ${courseLabel}`,
+      `*Photo Link:* ${uploadedPhotoUrl || "Not uploaded"}`,
     ].join("\n");
 
     return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
@@ -295,6 +392,8 @@ export default function RegisterForm() {
     setIsSuccess(false);
     setSubmitError(null);
     setFileError(null);
+    setDobInputText("");
+    setUploadedPhotoUrl("");
     setSavedTo({ email: false, sheets: false });
     setFormData(emptyForm);
   };
@@ -312,7 +411,7 @@ export default function RegisterForm() {
 
   /* ─────────────────────────────────────────────────────────────────────── */
   return (
-    <section id="register" className="py-24 bg-slate-100 dark:bg-slate-900/50 relative overflow-hidden transition-colors duration-300">
+    <section id="register" className="py-24 bg-slate-50/60 dark:bg-slate-900/50 relative overflow-hidden transition-colors duration-300">
       <div className="absolute top-[20%] left-[-10%] w-[350px] h-[350px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -368,12 +467,117 @@ export default function RegisterForm() {
                   </div>
 
                   {/* DOB */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <label className={lbl}>Date of Birth</label>
                     <div className="relative">
                       <Ico><Calendar className="h-5 w-5" /></Ico>
-                      <input type="date" name="dob" required value={formData.dob} onChange={handleChange} className={`${inp} cursor-pointer`} />
+                      <input
+                        type="text"
+                        required
+                        value={dobInputText}
+                        onChange={handleDobInputChange}
+                        placeholder="DD-MM-YYYY"
+                        className={inp}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCalendar((prev) => !prev)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-500 transition-colors cursor-pointer"
+                      >
+                        <Calendar className="h-5 w-5" />
+                      </button>
                     </div>
+
+                    <AnimatePresence>
+                      {showCalendar && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                            className="absolute left-0 right-0 sm:left-auto sm:w-[320px] z-50 mt-2 p-5 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/60 rounded-3xl shadow-2xl shadow-blue-500/5"
+                          >
+                            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-900">
+                              <button
+                                type="button"
+                                onClick={handlePrevMonth}
+                                className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition-all cursor-pointer"
+                              >
+                                <ChevronLeft className="h-4.5 w-4.5" />
+                              </button>
+
+                              <div className="flex items-center space-x-1.5">
+                                <select
+                                  value={calendarMonth}
+                                  onChange={(e) => setCalendarMonth(parseInt(e.target.value, 10))}
+                                  className="bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-extrabold outline-none cursor-pointer transition-colors"
+                                >
+                                  {monthsList.map((m, idx) => (
+                                    <option key={m} value={idx} className="bg-white dark:bg-slate-950">{m.slice(0, 3)}</option>
+                                  ))}
+                                </select>
+
+                                <select
+                                  value={calendarYear}
+                                  onChange={(e) => setCalendarYear(parseInt(e.target.value, 10))}
+                                  className="bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-extrabold outline-none cursor-pointer transition-colors"
+                                >
+                                  {yearsList.map((y) => (
+                                    <option key={y} value={y} className="bg-white dark:bg-slate-950">{y}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={handleNextMonth}
+                                className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition-all cursor-pointer"
+                              >
+                                <ChevronRight className="h-4.5 w-4.5" />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1 text-center mb-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                              <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1 text-center">
+                              {Array.from({ length: getFirstDayOfMonth(calendarMonth, calendarYear) }).map((_, idx) => (
+                                <span key={`empty-${idx}`} className="w-8 h-8" />
+                              ))}
+
+                              {Array.from({ length: getDaysInMonth(calendarMonth, calendarYear) }).map((_, idx) => {
+                                const day = idx + 1;
+                                const dateString = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                                const isSelected = formData.dob === dateString;
+                                
+                                const today = new Date();
+                                const isToday = today.getDate() === day && today.getMonth() === calendarMonth && today.getFullYear() === calendarYear;
+
+                                return (
+                                  <button
+                                    key={`day-${day}`}
+                                    type="button"
+                                    onClick={() => selectDate(day)}
+                                    className={`w-8 h-8 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                                      isSelected
+                                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-extrabold scale-105"
+                                        : isToday
+                                          ? "border border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold"
+                                          : "hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200"
+                                    }`}
+                                  >
+                                    {day}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   {/* Email */}
@@ -429,7 +633,7 @@ export default function RegisterForm() {
                       <Ico><GraduationCap className="h-5 w-5" /></Ico>
                       <select name="qualification" value={formData.qualification} onChange={handleChange} className={sel}>
                         {educationLevels.map((l) => (
-                          <option key={l.value} value={l.value} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-white">{l.label}</option>
+                          <option key={l.value} value={l.value} className="bg-white dark:bg-slate-955 text-slate-800 dark:text-white">{l.label}</option>
                         ))}
                       </select>
                     </div>
@@ -442,7 +646,7 @@ export default function RegisterForm() {
                       <Ico><BookOpen className="h-5 w-5" /></Ico>
                       <select name="course" value={formData.course} onChange={handleChange} className={sel}>
                         {courses.map((c) => (
-                          <option key={c.value} value={c.value} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-white">{c.label}</option>
+                          <option key={c.value} value={c.value} className="bg-white dark:bg-slate-955 text-slate-800 dark:text-white">{c.label}</option>
                         ))}
                       </select>
                     </div>
@@ -461,7 +665,7 @@ export default function RegisterForm() {
                       <div className="relative">
                         <Ico><BookOpen className="h-5 w-5" /></Ico>
                         <select name="digitalCourse" value={formData.digitalCourse} onChange={handleChange}
-                          className="w-full bg-white dark:bg-slate-950 border border-blue-500/50 dark:border-blue-500/30 hover:border-blue-500 focus:border-blue-600 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200 appearance-none cursor-pointer text-base">
+                          className="w-full bg-white dark:bg-slate-955 border border-blue-500/50 dark:border-blue-500/30 hover:border-blue-500 focus:border-blue-600 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200 appearance-none cursor-pointer text-base">
                           {digitalCourses.map((dc) => (
                             <option key={dc.value} value={dc.value} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-white">{dc.label}</option>
                           ))}
@@ -484,7 +688,7 @@ export default function RegisterForm() {
                         ? "border-rose-400 bg-rose-50 dark:bg-rose-950/20"
                         : formData.picture
                           ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
-                          : "border-slate-300 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500/50 bg-white dark:bg-slate-950"
+                          : "border-slate-300 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500/50 bg-white dark:bg-slate-955"
                     }`}>
                       <div className="flex flex-col items-center justify-center py-4 px-3 text-center">
                         {formData.picture ? (
@@ -497,11 +701,11 @@ export default function RegisterForm() {
                         </p>
                         {formData.picture && (
                           <p className="text-xs text-emerald-500 mt-1">
-                            {(formData.picture.size / 1024).toFixed(0)} KB — will be saved to Drive & emailed
+                            {(formData.picture.size / 1024).toFixed(0)} KB — will be hosted & emailed
                           </p>
                         )}
                         {!formData.picture && (
-                          <p className="text-xs text-slate-500 mt-1">PNG, JPG or JPEG · Saved to Google Drive</p>
+                          <p className="text-xs text-slate-500 mt-1">PNG, JPG or JPEG · Direct Web Hosting</p>
                         )}
                       </div>
                       <input type="file" name="picture" accept="image/*" required onChange={handlePictureChange} className="hidden" />
@@ -524,7 +728,7 @@ export default function RegisterForm() {
                   {isSubmitting ? (
                     <>
                       <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Submitting…</span>
+                      <span>Uploading &amp; Submitting…</span>
                     </>
                   ) : (
                     <>
@@ -557,7 +761,7 @@ export default function RegisterForm() {
                     {[
                       { ok: savedTo.email,  label: "📧 Email Notification" },
                       { ok: savedTo.sheets, label: "📊 Google Sheets" },
-                      { ok: savedTo.sheets, label: "📁 Photo → Google Drive" },
+                      { ok: !!uploadedPhotoUrl && !uploadedPhotoUrl.includes("failed"), label: "☁️ Image Hosted" },
                     ].map(({ ok, label }) => (
                       <span key={label} className={`inline-flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${
                         ok
@@ -571,10 +775,10 @@ export default function RegisterForm() {
                   </div>
                 )}
 
-                <p className="text-slate-800 dark:text-slate-300 max-w-md mx-auto text-base sm:text-lg">
+                <p className="text-slate-800 dark:text-slate-350 max-w-md mx-auto text-base sm:text-lg">
                   {submitError
                     ? submitError
-                    : <>Thank you, <strong>{formData.name}</strong>. Your registration &amp; photo have been saved. Connect on WhatsApp to confirm your batch timing!</>
+                    : <>Thank you, <strong>{formData.name}</strong>. Your registration &amp; photo link have been saved. Connect on WhatsApp to confirm your batch timing!</>
                   }
                 </p>
 

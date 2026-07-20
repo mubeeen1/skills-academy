@@ -58,9 +58,9 @@ export default function Footer() {
               <li className="flex items-start">
                 <Phone className="h-5 w-5 text-blue-600 dark:text-blue-500 mr-2.5 shrink-0 mt-0.5" />
                 <div className="flex flex-col space-y-0.5">
-                  <span>0306-3036421</span>
+                  <span>0323-1774948 (Primary)</span>
                   <span>0313-6701631</span>
-                  <span>0323-1774948</span>
+                  <span>0306-3036421</span>
                 </div>
               </li>
               <li className="flex items-start">
