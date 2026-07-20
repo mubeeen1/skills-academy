@@ -112,7 +112,7 @@ export default function Hero() {
                 <ArrowRight className="h-5 w-5" />
               </a>
               <a
-                href="#courses"
+                href="/courses"
                 className="inline-flex items-center justify-center bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 font-semibold py-4 px-8 rounded-2xl transition-all duration-300 hover:scale-[1.01] backdrop-blur-md shadow-sm"
               >
                 <span>Explore Courses</span>

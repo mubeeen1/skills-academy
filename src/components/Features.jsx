@@ -48,7 +48,7 @@ export default function Features() {
             <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
               A Proven Method for Academic Success
             </h3>
-            <p className="text-slate-800 dark:text-slate-350 leading-relaxed text-base sm:text-lg">
+            <p className="text-slate-800 dark:text-slate-300 leading-relaxed text-base sm:text-lg">
               At Siddiqui Skills Academy, we bridge the gap between candidate potential and military selection criteria. Our specialized teaching methodology ensures students are mentally, academically, and physically prepared.
             </p>
             
@@ -60,7 +60,7 @@ export default function Features() {
                 </div>
                 <h4 className="font-bold text-slate-900 dark:text-white text-base">Full ISSB & Test Guidance</h4>
               </div>
-              <p className="text-sm text-slate-700 dark:text-slate-400 leading-relaxed">
+              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                 Beyond initial computer testing, we guide PMA candidates on physical requirements, academic interviews, and basic personality profiling.
               </p>
             </div>
@@ -72,7 +72,7 @@ export default function Features() {
               {highlights.map((highlight, index) => (
                 <motion.div
                   key={index}
-                  className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-900 hover:border-slate-350 dark:hover:border-slate-800 transition-colors duration-300"
+                  className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-900 hover:border-slate-300 dark:hover:border-slate-800 transition-colors duration-300"
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -83,7 +83,7 @@ export default function Features() {
                     {highlight.icon}
                   </div>
                   <h4 className="font-bold text-slate-900 dark:text-white text-xl mb-2">{highlight.title}</h4>
-                  <p className="text-base text-slate-700 dark:text-slate-400 leading-relaxed">{highlight.description}</p>
+                  <p className="text-base text-slate-700 dark:text-slate-300 leading-relaxed">{highlight.description}</p>
                 </motion.div>
               ))}
             </div>

@@ -76,7 +76,7 @@ export default function ContactForm() {
             Contact Our Admissions Office
           </p>
           <div className="mt-4 h-1.5 w-24 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full"></div>
-          <p className="text-slate-800 dark:text-slate-350 mt-5 text-base sm:text-lg lg:text-xl leading-relaxed">
+          <p className="text-slate-800 dark:text-slate-300 mt-5 text-base sm:text-lg lg:text-xl leading-relaxed">
             Have questions about timings, syllabus, or private registrations? Send us a message or call directly.
           </p>
         </div>
@@ -166,7 +166,7 @@ export default function ContactForm() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       {/* Name */}
                       <div className="space-y-2">
-                        <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Your Name</label>
+                        <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Your Name <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                             <User className="h-5 w-5" />
@@ -185,7 +185,7 @@ export default function ContactForm() {
 
                       {/* Phone Number */}
                       <div className="space-y-2">
-                        <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Phone Number</label>
+                        <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Phone Number <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                             <Phone className="h-5 w-5" />
@@ -204,7 +204,7 @@ export default function ContactForm() {
 
                       {/* Email Address */}
                       <div className="space-y-2">
-                        <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Email Address</label>
+                        <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Email Address <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                             <Mail className="h-5 w-5" />
@@ -223,7 +223,7 @@ export default function ContactForm() {
 
                       {/* Subject */}
                       <div className="space-y-2">
-                        <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Subject</label>
+                        <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Subject <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                             <Info className="h-5 w-5" />
@@ -243,7 +243,7 @@ export default function ContactForm() {
 
                     {/* Message */}
                     <div className="space-y-2">
-                      <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Your Message</label>
+                      <label className="text-sm font-extrabold text-slate-700 dark:text-slate-400 uppercase tracking-wider block">Your Message <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                       <textarea
                         name="message"
                         value={formData.message}
@@ -283,7 +283,7 @@ export default function ContactForm() {
                       <CheckCircle2 className="h-12 w-12" />
                     </div>
                     <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">Message Sent!</h3>
-                    <p className="text-slate-800 dark:text-slate-350 max-w-md mx-auto text-base sm:text-lg">
+                    <p className="text-slate-800 dark:text-slate-300 max-w-md mx-auto text-base sm:text-lg">
                       Thank you for reaching out, <strong>{formData.name}</strong>. Your inquiry has been sent to our inbox via email. You can also connect with us directly on WhatsApp for an instant response!
                     </p>
 

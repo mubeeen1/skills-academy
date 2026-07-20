@@ -166,17 +166,17 @@ export default function Courses() {
                   
                   <p className="text-base font-semibold text-slate-800 dark:text-slate-400 uppercase tracking-wider">{course.subtitle}</p>
                   
-                  <p className="text-slate-800 dark:text-slate-355 leading-relaxed text-base sm:text-lg">
+                  <p className="text-slate-800 dark:text-slate-300 leading-relaxed text-base sm:text-lg">
                     {course.description}
                   </p>
 
                   {/* Syllabus / Highlights Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-slate-200 dark:border-slate-800 pt-6">
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-350 uppercase tracking-wider mb-3">Eligibility Rules:</h4>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wider mb-3">Eligibility Rules:</h4>
                       <ul className="space-y-2.5">
                         {course.requirements.map((req, i) => (
-                          <li key={i} className="flex items-start text-sm text-slate-700 dark:text-slate-400">
+                          <li key={i} className="flex items-start text-sm text-slate-700 dark:text-slate-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2 mt-2.5 shrink-0"></span>
                             <span>{req}</span>
                           </li>
@@ -184,7 +184,7 @@ export default function Courses() {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-350 uppercase tracking-wider mb-3">Syllabus & Focus:</h4>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wider mb-3">Syllabus & Focus:</h4>
                       <ul className="space-y-2.5">
                         {course.highlights.map((highlight, i) => (
                           <li key={i} className="flex items-start text-sm text-slate-800 dark:text-slate-300">
@@ -221,6 +221,7 @@ export default function Courses() {
                           src={course.image}
                           alt={course.imageAlt}
                           fill
+                          priority={index === 0}
                           sizes="(max-w-768px) 100vw, 500px"
                           className="object-contain"
                         />

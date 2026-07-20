@@ -84,7 +84,7 @@ export default function CoursesOverview() {
           {overviews.map((item, index) => (
             <motion.div
               key={index}
-              className="glass-panel hover-shine flex flex-col justify-between p-6 sm:p-8 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 hover:border-blue-500/30 dark:hover:border-blue-500/30 transition-all duration-300 group"
+              className="glass-panel hover-shine flex flex-col justify-between p-6 sm:p-8 rounded-3xl border border-slate-200/50 dark:border-slate-800/40 hover:border-blue-500/30 dark:hover:border-blue-500/30 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_12px_30px_rgba(37,99,235,0.06)] transition-all duration-300 group"
               variants={cardVariants}
               whileHover={{ y: -6, transition: { duration: 0.2 } }}
             >
@@ -102,9 +102,9 @@ export default function CoursesOverview() {
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {item.title}
                 </h3>
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-400 mb-5">{item.subtitle}</p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-400 mb-5">{item.subtitle}</p>
 
-                <p className="text-base text-slate-800 dark:text-slate-355 leading-relaxed mb-6">
+                <p className="text-base text-slate-800 dark:text-slate-300 leading-relaxed mb-6">
                   {item.description}
                 </p>
 
@@ -123,7 +123,7 @@ export default function CoursesOverview() {
               <div className="pt-2">
                 <a
                   href={`/register?course=${item.courseParam}`}
-                  className="flex items-center justify-center space-x-2 w-full bg-slate-900 hover:bg-blue-600 dark:bg-slate-950 dark:hover:bg-blue-600 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-inner"
+                  className="flex items-center justify-center space-x-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-md shadow-blue-500/5"
                 >
                   <span className="text-sm">Quick Enroll</span>
                 </a>

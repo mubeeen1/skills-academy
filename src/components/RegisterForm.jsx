@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -137,11 +137,22 @@ export default function RegisterForm() {
     "July", "August", "September", "October", "November", "December"
   ];
 
-  const currentYear = new Date().getFullYear();
-  const yearsList = Array.from({ length: currentYear - 1945 + 1 }, (_, i) => currentYear - i);
-
   const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
+
+  // Memoize arrays to avoid re-allocations on typing re-renders
+  const yearsList = useMemo(() => {
+    const current = new Date().getFullYear();
+    return Array.from({ length: current - 1945 + 1 }, (_, i) => current - i);
+  }, []);
+
+  const paddingDays = useMemo(() => {
+    return Array.from({ length: getFirstDayOfMonth(calendarMonth, calendarYear) });
+  }, [calendarMonth, calendarYear]);
+
+  const monthDays = useMemo(() => {
+    return Array.from({ length: getDaysInMonth(calendarMonth, calendarYear) });
+  }, [calendarMonth, calendarYear]);
 
   /* ── pre-fill from URL query params ──────────────────────────────────── */
   useEffect(() => {
@@ -441,7 +452,7 @@ export default function RegisterForm() {
 
                   {/* Name */}
                   <div className="space-y-2">
-                    <label className={lbl}>Full Name</label>
+                    <label className={lbl}>Full Name <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                     <div className="relative">
                       <Ico><User className="h-5 w-5" /></Ico>
                       <input type="text" name="name" required value={formData.name} onChange={handleChange} className={inp} placeholder="John Doe" />
@@ -450,7 +461,7 @@ export default function RegisterForm() {
 
                   {/* Father */}
                   <div className="space-y-2">
-                    <label className={lbl}>Father's Name</label>
+                    <label className={lbl}>Father's Name <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                     <div className="relative">
                       <Ico><User className="h-5 w-5" /></Ico>
                       <input type="text" name="fatherName" required value={formData.fatherName} onChange={handleChange} className={inp} placeholder="Father's Full Name" />
@@ -459,7 +470,7 @@ export default function RegisterForm() {
 
                   {/* CNIC */}
                   <div className="space-y-2">
-                    <label className={lbl}>CNIC / B-Form Number</label>
+                    <label className={lbl}>CNIC / B-Form Number <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                     <div className="relative">
                       <Ico><FileText className="h-5 w-5" /></Ico>
                       <input type="text" name="cnic" required value={formData.cnic} onChange={handleCnicChange} className={inp} placeholder="37405-1234567-1" />
@@ -468,7 +479,7 @@ export default function RegisterForm() {
 
                   {/* DOB */}
                   <div className="space-y-2 relative">
-                    <label className={lbl}>Date of Birth</label>
+                    <label className={lbl}>Date of Birth <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                     <div className="relative">
                       <Ico><Calendar className="h-5 w-5" /></Ico>
                       <input
@@ -515,7 +526,7 @@ export default function RegisterForm() {
                                   className="bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-extrabold outline-none cursor-pointer transition-colors"
                                 >
                                   {monthsList.map((m, idx) => (
-                                    <option key={m} value={idx} className="bg-white dark:bg-slate-950">{m.slice(0, 3)}</option>
+                                    <option key={m} value={idx}>{m.slice(0, 3)}</option>
                                   ))}
                                 </select>
 
@@ -525,7 +536,7 @@ export default function RegisterForm() {
                                   className="bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-extrabold outline-none cursor-pointer transition-colors"
                                 >
                                   {yearsList.map((y) => (
-                                    <option key={y} value={y} className="bg-white dark:bg-slate-950">{y}</option>
+                                    <option key={y} value={y}>{y}</option>
                                   ))}
                                 </select>
                               </div>
@@ -544,11 +555,11 @@ export default function RegisterForm() {
                             </div>
 
                             <div className="grid grid-cols-7 gap-1 text-center">
-                              {Array.from({ length: getFirstDayOfMonth(calendarMonth, calendarYear) }).map((_, idx) => (
+                              {paddingDays.map((_, idx) => (
                                 <span key={`empty-${idx}`} className="w-8 h-8" />
                               ))}
 
-                              {Array.from({ length: getDaysInMonth(calendarMonth, calendarYear) }).map((_, idx) => {
+                              {monthDays.map((_, idx) => {
                                 const day = idx + 1;
                                 const dateString = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                                 const isSelected = formData.dob === dateString;
@@ -582,7 +593,7 @@ export default function RegisterForm() {
 
                   {/* Email */}
                   <div className="space-y-2">
-                    <label className={lbl}>Email Address</label>
+                    <label className={lbl}>Email Address <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                     <div className="relative">
                       <Ico><Mail className="h-5 w-5" /></Ico>
                       <input type="email" name="email" required value={formData.email} onChange={handleChange} className={inp} placeholder="email@domain.com" />
@@ -591,7 +602,7 @@ export default function RegisterForm() {
 
                   {/* WhatsApp */}
                   <div className="space-y-2">
-                    <label className={lbl}>WhatsApp Number</label>
+                    <label className={lbl}>WhatsApp Number <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                     <div className="relative">
                       <Ico><MessageSquare className="h-5 w-5" /></Ico>
                       <input type="tel" name="whatsapp" required value={formData.whatsapp} onChange={handleChange} className={inp} placeholder="03xx-xxxxxxx" />
@@ -600,7 +611,7 @@ export default function RegisterForm() {
 
                   {/* Current Address */}
                   <div className="space-y-2 md:col-span-2">
-                    <label className={lbl}>Current Address</label>
+                    <label className={lbl}>Current Address <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                     <div className="relative">
                       <Ico><MapPin className="h-5 w-5" /></Ico>
                       <input type="text" name="currentAddress" required value={formData.currentAddress} onChange={handleChange} className={inp} placeholder="House No, Street, Mohalla, City" />
@@ -610,7 +621,7 @@ export default function RegisterForm() {
                   {/* Permanent Address */}
                   <div className="space-y-2 md:col-span-2">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                      <label className={lbl}>Permanent Address</label>
+                      <label className={lbl}>Permanent Address <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                       <label className="inline-flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-400 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                         <input type="checkbox" checked={formData.sameAddress} onChange={handleAddressCheckbox}
                           className="rounded border-slate-300 dark:bg-slate-950 dark:border-slate-800 text-blue-600 focus:ring-blue-500 cursor-pointer" />
@@ -628,12 +639,12 @@ export default function RegisterForm() {
 
                   {/* Qualification */}
                   <div className="space-y-2">
-                    <label className={lbl}>Last Qualification</label>
+                    <label className={lbl}>Last Qualification <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                     <div className="relative">
                       <Ico><GraduationCap className="h-5 w-5" /></Ico>
                       <select name="qualification" value={formData.qualification} onChange={handleChange} className={sel}>
                         {educationLevels.map((l) => (
-                          <option key={l.value} value={l.value} className="bg-white dark:bg-slate-955 text-slate-800 dark:text-white">{l.label}</option>
+                          <option key={l.value} value={l.value}>{l.label}</option>
                         ))}
                       </select>
                     </div>
@@ -641,12 +652,12 @@ export default function RegisterForm() {
 
                   {/* Course */}
                   <div className="space-y-2">
-                    <label className={lbl}>Select Course</label>
+                    <label className={lbl}>Select Course <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                     <div className="relative">
                       <Ico><BookOpen className="h-5 w-5" /></Ico>
                       <select name="course" value={formData.course} onChange={handleChange} className={sel}>
                         {courses.map((c) => (
-                          <option key={c.value} value={c.value} className="bg-white dark:bg-slate-955 text-slate-800 dark:text-white">{c.label}</option>
+                          <option key={c.value} value={c.value}>{c.label}</option>
                         ))}
                       </select>
                     </div>
@@ -659,15 +670,15 @@ export default function RegisterForm() {
                       exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25 }}
                     >
                       <label className={lbl}>
-                        Select Digital Skill
+                        Select Digital Skill <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span>
                         <span className="ml-2 text-[10px] font-bold text-blue-600 dark:text-blue-400 normal-case tracking-normal bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">Auto-filled</span>
                       </label>
                       <div className="relative">
                         <Ico><BookOpen className="h-5 w-5" /></Ico>
                         <select name="digitalCourse" value={formData.digitalCourse} onChange={handleChange}
-                          className="w-full bg-white dark:bg-slate-955 border border-blue-500/50 dark:border-blue-500/30 hover:border-blue-500 focus:border-blue-600 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200 appearance-none cursor-pointer text-base">
+                          className="w-full bg-white dark:bg-slate-950 border border-blue-500/50 dark:border-blue-500/30 hover:border-blue-500 focus:border-blue-600 text-slate-800 dark:text-white rounded-2xl pl-12 pr-4 py-3.5 outline-none transition-colors duration-200 appearance-none cursor-pointer text-base">
                           {digitalCourses.map((dc) => (
-                            <option key={dc.value} value={dc.value} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-white">{dc.label}</option>
+                            <option key={dc.value} value={dc.value}>{dc.label}</option>
                           ))}
                         </select>
                       </div>
@@ -677,7 +688,7 @@ export default function RegisterForm() {
                   {/* Fresh Picture Upload */}
                   <div className="space-y-2 md:col-span-2">
                     <div className="flex items-center justify-between">
-                      <label className={lbl}>Fresh Picture</label>
+                      <label className={lbl}>Fresh Picture <span className="text-rose-500 dark:text-rose-400 ml-0.5">*</span></label>
                       <span className="text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider">
                         Max {MAX_FILE_MB} MB · JPG / PNG
                       </span>
@@ -688,7 +699,7 @@ export default function RegisterForm() {
                         ? "border-rose-400 bg-rose-50 dark:bg-rose-950/20"
                         : formData.picture
                           ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
-                          : "border-slate-300 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500/50 bg-white dark:bg-slate-955"
+                          : "border-slate-300 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500/50 bg-white dark:bg-slate-950"
                     }`}>
                       <div className="flex flex-col items-center justify-center py-4 px-3 text-center">
                         {formData.picture ? (
@@ -775,7 +786,7 @@ export default function RegisterForm() {
                   </div>
                 )}
 
-                <p className="text-slate-800 dark:text-slate-350 max-w-md mx-auto text-base sm:text-lg">
+                <p className="text-slate-800 dark:text-slate-300 max-w-md mx-auto text-base sm:text-lg">
                   {submitError
                     ? submitError
                     : <>Thank you, <strong>{formData.name}</strong>. Your registration &amp; photo link have been saved. Connect on WhatsApp to confirm your batch timing!</>

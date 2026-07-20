@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Menu, X, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -47,10 +48,13 @@ export default function Header() {
     }
   };
 
+  const pathname = usePathname();
+  const isRegisterPage = pathname === "/register";
+
   const navLinks = [
     { name: "Home", href: "/#home" },
     { name: "Courses", href: "/courses" },
-    { name: "Register", href: "/register" },
+    ...(!isRegisterPage ? [{ name: "Register", href: "/register" }] : []),
     { name: "Why Us", href: "/#why-us" },
     { name: "Contact", href: "/#contact" },
   ];
@@ -72,6 +76,7 @@ export default function Header() {
                 src="/images/logo.jpeg"
                 alt="Siddiqui Skills Academy Logo"
                 fill
+                priority
                 sizes="40px"
                 className="object-cover"
               />
@@ -113,13 +118,15 @@ export default function Header() {
             </button>
 
             {/* CTA Button */}
-            <a
-              href="/register"
-              className="relative group overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300"
-            >
-              <span className="relative z-10">Enroll Now</span>
-              <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-            </a>
+            {!isRegisterPage && (
+              <a
+                href="/register"
+                className="relative group overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300"
+              >
+                <span className="relative z-10">Enroll Now</span>
+                <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              </a>
+            )}
           </div>
 
           {/* Mobile Navigation controls */}
@@ -166,15 +173,17 @@ export default function Header() {
                   {link.name}
                 </a>
               ))}
-              <div className="px-3 pt-4">
-                <a
-                  href="/register"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg"
-                >
-                  Enroll Now
-                </a>
-              </div>
+              {!isRegisterPage && (
+                <div className="px-3 pt-4">
+                  <a
+                    href="/register"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block w-full text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg"
+                  >
+                    Enroll Now
+                  </a>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

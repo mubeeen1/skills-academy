@@ -80,7 +80,7 @@ export default function Skills() {
               onClick={() => setActiveTab(category.id)}
               className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl border text-sm font-semibold transition-all duration-300 ${
                 activeTab === category.id
-                  ? "bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-950 shadow-md"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-transparent text-white shadow-md shadow-blue-500/10"
                   : "bg-slate-50 border-slate-200 text-slate-800 hover:text-slate-900 hover:bg-slate-100 dark:bg-slate-900/50 dark:border-slate-800/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-900"
               }`}
             >
@@ -101,7 +101,7 @@ export default function Skills() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3, delay: index * 0.03 }}
-                className="glass-panel p-5 rounded-2xl border border-slate-200/60 dark:border-slate-900 hover:border-blue-500/20 dark:hover:border-blue-500/30 transition-all duration-300 flex flex-col justify-between group"
+                className="glass-panel p-5 rounded-2xl border border-slate-200/60 dark:border-slate-900 hover:border-blue-500/20 dark:hover:border-blue-500/30 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_12px_30px_rgba(37,99,235,0.06)] transition-all duration-300 flex flex-col justify-between group"
                 whileHover={{ y: -4, scale: 1.01 }}
               >
                 <div>
@@ -109,14 +109,14 @@ export default function Skills() {
                     {skill.icon}
                   </div>
                   <h4 className="font-bold text-slate-900 dark:text-white text-base mb-1.5">{skill.name}</h4>
-                  <p className="text-xs text-slate-700 dark:text-slate-400 leading-relaxed">{skill.description}</p>
+                  <p className="text-xs text-slate-800 dark:text-slate-400 leading-relaxed">{skill.description}</p>
                 </div>
 
                 {/* Register Now Button */}
                 <div className="border-t border-slate-100 dark:border-slate-900/60 mt-4 pt-3">
                   <a
                     href={`/register?course=digital&digitalCourse=${skill.registerValue}`}
-                    className="flex items-center justify-center space-x-1.5 w-full bg-slate-900 hover:bg-blue-600 dark:bg-slate-950 dark:hover:bg-blue-600 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-all duration-300 shadow-inner group/btn"
+                    className="flex items-center justify-center space-x-1.5 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-all duration-300 shadow-md shadow-blue-500/5 group/btn"
                   >
                     <span>Register Now</span>
                     <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover/btn:translate-x-0.5" />
